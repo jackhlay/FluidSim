@@ -1,7 +1,11 @@
 package main
 
 import (
+	"fmt"
 	"image/color"
+
+	"time"
+
 	"math"
 	"math/rand"
 
@@ -9,19 +13,22 @@ import (
 	"github.com/hajimehoshi/ebiten/v2/vector"
 )
 
+var startTime = time.Now()
+
 // Game structure
 type Game struct{}
 
 // Config struct for simulation parameters
 type Config struct {
-	Width      int
-	Height     int
-	Particles  int
-	Viscosity  float64
-	Turbulence float64
-	Repulsion  float64
-	Speed      float64
-	Size       float64
+	DynamicColor bool
+	Width        int
+	Height       int
+	Particles    int
+	Viscosity    float64
+	Turbulence   float64
+	Repulsion    float64
+	Speed        float64
+	Size         float64
 }
 
 // Particle struct
@@ -34,6 +41,13 @@ var particles []Particle
 
 // Update runs the game logic
 func (g *Game) Update() error {
+
+	if time.Since(startTime).Milliseconds() > 0 {
+		fmt.Println("FPS: ", 1000/float64(time.Since(startTime).Milliseconds()))
+		startTime = time.Now()
+
+	}
+
 	// Mouse input
 	mouseX, mouseY := ebiten.CursorPosition()
 	if ebiten.IsMouseButtonPressed(ebiten.MouseButtonLeft) {
@@ -58,6 +72,7 @@ func (g *Game) Update() error {
 	}
 	// Apply viscosity (friction)
 	for i := range particles {
+
 		particles[i].vx *= conf.Viscosity
 		particles[i].vy *= conf.Viscosity
 
@@ -68,11 +83,15 @@ func (g *Game) Update() error {
 		particles[i].y += particles[i].vy
 
 		// Edge detection
-		if particles[i].x-conf.Size < float64(conf.Size) || particles[i].x+conf.Size > float64(conf.Width)-conf.Size {
+		if particles[i].x-conf.Size <= 0 || particles[i].x+conf.Size > float64(conf.Width)-conf.Size {
 			particles[i].vx = -particles[i].vx
+			// particles[i].x = float64(conf.Width / 2)
+			// particles[i].y = float64(conf.Height / 2)
 		}
-		if particles[i].y-conf.Size < float64(conf.Size) || particles[i].y+conf.Size > float64(conf.Height)-conf.Size {
+		if particles[i].y-conf.Size <= 0 || particles[i].y+conf.Size > float64(conf.Height)-conf.Size {
 			particles[i].vy = -particles[i].vy
+			// particles[i].x = float64(conf.Width / 2)
+			// particles[i].y = float64(conf.Height / 2)
 		}
 
 		// Repulsion between particles
@@ -106,7 +125,17 @@ func (g *Game) Update() error {
 func (g *Game) Draw(screen *ebiten.Image) {
 	screen.Clear()
 	for _, p := range particles {
-		vector.DrawFilledCircle(screen, float32(p.x), float32(p.y), float32(conf.Size), color.RGBA{0, 255, 255, 255}, true)
+		if conf.DynamicColor {
+			r := uint8(rand.Intn(256))
+			g := uint8(rand.Intn(256))
+			b := uint8(rand.Intn(256))
+			vector.DrawFilledCircle(screen, float32(p.x), float32(p.y), float32(conf.Size), color.RGBA{r, g, b, 255}, true)
+		} else {
+			r := uint8(255)
+			g := uint8(255)
+			b := uint8(255)
+			vector.DrawFilledCircle(screen, float32(p.x), float32(p.y), float32(conf.Size), color.RGBA{r, g, b, 237}, true)
+		}
 	}
 }
 

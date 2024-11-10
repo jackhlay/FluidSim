@@ -8,14 +8,14 @@ import (
 )
 
 var conf = Config{
-	Width:      1280,
-	Height:     720,
-	Particles:  97,
-	Viscosity:  .99,
-	Turbulence: .03,
-	Repulsion:  .5,
-	Speed:      -9.81,
-	Size:       7,
+	DynamicColor: false,
+	Width:        1280,
+	Height:       720,
+	Particles:    512,
+	Viscosity:    .99,
+	Turbulence:   .01,
+	Repulsion:    1.0398,
+	Size:         4,
 }
 
 func main() {
