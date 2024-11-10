@@ -14,18 +14,25 @@ type Game struct{}
 
 // Config struct for simulation parameters
 type Config struct {
-	DynamicColor   bool
-	Width          int
-	Height         int
-	Particles      int
-	Viscosity      float64
-	Turbulence     float64
-	Repulsion      float64
-	Bounce         float64
-	Gravity        float64
+	DynamicColor bool
+	Width        int
+	Height       int
+	Particles    int
+	Viscosity    float64
+	Turbulence   float64
+
+	lowVelocityThreshold float64 // When particles fall below this speed, apply friction
+
+	Friction  float64 // Friction coefficient to slow down particles
+	Drag      float64
+	Repulsion float64
+	Bounce    float64
+	Gravity   float64
+
 	SpringConstant float64 // Cohesion force constant
 	RestLength     float64 // Ideal distance between particles for stability
-	Size           float64
+
+	Size float64
 }
 
 // Particle struct
@@ -76,7 +83,7 @@ func getRandomColor() color.RGBA {
 	if conf.DynamicColor {
 		return color.RGBA{uint8(rand.Intn(256)), uint8(rand.Intn(256)), uint8(rand.Intn(256)), 255}
 	}
-	return color.RGBA{0, 242, 255, 120}
+	return color.RGBA{0, 49, 144, 190}
 }
 
 // Get grid cell index from particle coordinates
@@ -121,7 +128,6 @@ func getNeighbors(gridCell int) []int {
 // Update runs the game logic
 func (g *Game) Update() error {
 	maxSpeed := 0.0
-	// Reset the spatial partitioning grid
 	for i := range grid {
 		grid[i] = nil
 	}
@@ -133,12 +139,17 @@ func (g *Game) Update() error {
 		if speed > maxSpeed {
 			maxSpeed = speed
 		}
+		p.vx *= (1 - conf.Drag)
+		p.vy *= (1 - conf.Drag)
+
 	}
 	for i := range particles {
 		p := &particles[i]
-		speed := math.Hypot(p.vx, p.vy)
-		normalizedSpeed := math.Abs(speed / maxSpeed)
-		particles[i].color = interpColors(lowSpeedColor, highSpeedColor, normalizedSpeed)
+		if conf.DynamicColor {
+			speed := math.Hypot(p.vx, p.vy)
+			normalizedSpeed := speed / maxSpeed
+			particles[i].color = interpColors(lowSpeedColor, highSpeedColor, normalizedSpeed)
+		}
 
 		gridIndex := int(p.x/conf.Size)*gridHeight + int(p.y/conf.Size)
 		grid[gridIndex] = append(grid[gridIndex], i)
@@ -187,10 +198,9 @@ func (g *Game) Update() error {
 		p.vx *= conf.Viscosity
 		p.vy *= conf.Viscosity
 
-		// Apply Turbulence
-		p.vx += (rand.Float64() - 0.5) * conf.Turbulence
-		p.vy += (rand.Float64() - 0.5) * conf.Turbulence
-
+		// Apply drag
+		// p.vx += (rand.Float64() - 0.5)
+		// p.vy += (rand.Float64() - 0.5)
 		// Apply spring force to neighbors within a small distance
 		gridCell := getGridCell(particles[i].x, particles[i].y)
 		for _, neighbor := range getNeighbors(gridCell) {
@@ -199,11 +209,13 @@ func (g *Game) Update() error {
 			}
 			dx := particles[neighbor].x - particles[i].x
 			dy := particles[neighbor].y - particles[i].y
+
 			distance := math.Hypot(dx, dy)
+			dynamicSpringConstant := conf.SpringConstant * (distance / conf.RestLength)
 
 			// Spring force
 			if distance < conf.RestLength && distance > 0 {
-				force := conf.SpringConstant * (distance - conf.RestLength)
+				force := dynamicSpringConstant * (distance - conf.RestLength)
 				fx := (dx / distance) * force
 				fy := (dy / distance) * force
 
@@ -229,7 +241,7 @@ func (g *Game) Update() error {
 			p.vy = -p.vy * conf.Bounce
 			p.y = conf.Size
 		} else if p.y+conf.Size >= float64(conf.Height) {
-			p.vy = -p.vy * conf.Bounce
+			p.vy = -p.vy
 			p.y = float64(conf.Height) - conf.Size
 		}
 	}
@@ -241,7 +253,7 @@ func (g *Game) Update() error {
 func (g *Game) Draw(screen *ebiten.Image) {
 	screen.Clear()
 	for _, p := range particles {
-		vector.DrawFilledCircle(screen, float32(p.x), float32(p.y), float32(conf.Size), p.color, false)
+		vector.DrawFilledCircle(screen, float32(p.x), float32(p.y), float32(conf.Size), p.color, true)
 	}
 }
 
