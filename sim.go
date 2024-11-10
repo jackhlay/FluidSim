@@ -7,16 +7,18 @@ import (
 )
 
 var conf = Config{
-	DynamicColor: false,
-	Width:        720,
-	Height:       480,
-	Particles:    32768,
-	Viscosity:    0.98,
-	Turbulence:   0.1,
-	Repulsion:    0.13,
-	Bounce:       0.09,
-	Gravity:      .73,
-	Size:         3.0,
+	DynamicColor:   true,
+	Width:          720,
+	Height:         640,
+	Particles:      8192,
+	Viscosity:      0.99,
+	Turbulence:     0.00001,
+	Repulsion:      0.29,
+	Bounce:         0.75,
+	Gravity:        0.3,
+	SpringConstant: 0.025,
+	RestLength:     5,
+	Size:           3,
 }
 
 func main() {

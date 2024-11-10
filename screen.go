@@ -14,16 +14,18 @@ type Game struct{}
 
 // Config struct for simulation parameters
 type Config struct {
-	DynamicColor bool
-	Width        int
-	Height       int
-	Particles    int
-	Viscosity    float64
-	Turbulence   float64
-	Repulsion    float64
-	Bounce       float64
-	Gravity      float64
-	Size         float64
+	DynamicColor   bool
+	Width          int
+	Height         int
+	Particles      int
+	Viscosity      float64
+	Turbulence     float64
+	Repulsion      float64
+	Bounce         float64
+	Gravity        float64
+	SpringConstant float64 // Cohesion force constant
+	RestLength     float64 // Ideal distance between particles for stability
+	Size           float64
 }
 
 // Particle struct
@@ -64,15 +66,47 @@ func getRandomColor() color.RGBA {
 	return color.RGBA{0, 242, 255, 120}
 }
 
+// Get grid cell index from particle coordinates
+func getGridCell(x, y float64) int {
+	col := int(x / conf.Size)
+	row := int(y / conf.Size)
+	if col >= gridWidth {
+		col = gridWidth - 1
+	} else if col < 0 {
+		col = 0
+	}
+	if row >= gridHeight {
+		row = gridHeight - 1
+	} else if row < 0 {
+		row = 0
+	}
+	return col*gridHeight + row
+}
+
+// Get indices of neighboring particles within adjacent cells
+func getNeighbors(gridCell int) []int {
+	neighbors := []int{}
+
+	col := gridCell / gridHeight
+	row := gridCell % gridHeight
+
+	for dx := -1; dx <= 1; dx++ {
+		for dy := -1; dy <= 1; dy++ {
+			neighborCol := col + dx
+			neighborRow := row + dy
+
+			// Ensure the neighbor cell is within grid bounds
+			if neighborCol >= 0 && neighborCol < gridWidth && neighborRow >= 0 && neighborRow < gridHeight {
+				neighborCell := neighborCol*gridHeight + neighborRow
+				neighbors = append(neighbors, grid[neighborCell]...)
+			}
+		}
+	}
+	return neighbors
+}
+
 // Update runs the game logic
 func (g *Game) Update() error {
-	// Calculate and display FPS every second
-	// if time.Since(startTime).Milliseconds() > 0 {
-	// 	fps = float64(1000) / float64(time.Since(startTime).Milliseconds()+1)
-	// 	fmt.Printf("FPS: %.2f\n", fps)
-	// 	startTime = time.Now()
-	// }
-
 	// Reset the spatial partitioning grid
 	for i := range grid {
 		grid[i] = nil
@@ -103,6 +137,22 @@ func (g *Game) Update() error {
 			}
 		}
 	}
+	if ebiten.IsMouseButtonPressed(ebiten.MouseButtonRight) {
+		for i := range particles {
+			p := &particles[i]
+			p.vy -= conf.Gravity
+
+			// Apply force aWay from the mouse
+			dx, dy := float64(mouseX)-p.x, float64(mouseY)-p.y
+			distanceSquared := dx*dx + dy*dy
+
+			if distanceSquared > 0 {
+				forceMagnitude := 1.0 / math.Sqrt(distanceSquared+1)
+				p.vx += forceMagnitude * -2 * dx
+				p.vy += forceMagnitude * -2 * dy
+			}
+		}
+	}
 
 	// Apply gravity, viscosity, and turbulence, and move particles
 	for i := range particles {
@@ -111,8 +161,33 @@ func (g *Game) Update() error {
 		p.vy += conf.Gravity
 		p.vx *= conf.Viscosity
 		p.vy *= conf.Viscosity
+
+		// Apply Turbulence
 		p.vx += (rand.Float64() - 0.5) * conf.Turbulence
 		p.vy += (rand.Float64() - 0.5) * conf.Turbulence
+
+		// Apply spring force to neighbors within a small distance
+		gridCell := getGridCell(particles[i].x, particles[i].y)
+		for _, neighbor := range getNeighbors(gridCell) {
+			if i == neighbor {
+				continue
+			}
+			dx := particles[neighbor].x - particles[i].x
+			dy := particles[neighbor].y - particles[i].y
+			distance := math.Hypot(dx, dy)
+
+			// Spring force
+			if distance < conf.RestLength && distance > 0 {
+				force := conf.SpringConstant * (distance - conf.RestLength)
+				fx := (dx / distance) * force
+				fy := (dy / distance) * force
+
+				particles[i].vx += fx
+				particles[i].vy += fy
+				particles[neighbor].vx -= fx
+				particles[neighbor].vy -= fy
+			}
+		}
 
 		p.x += p.vx
 		p.y += p.vy
@@ -126,34 +201,11 @@ func (g *Game) Update() error {
 			p.x = float64(conf.Width) - conf.Size
 		}
 		if p.y-conf.Size <= 0 {
-			p.vy = -p.vy
+			p.vy = -p.vy * conf.Bounce
 			p.y = conf.Size
 		} else if p.y+conf.Size >= float64(conf.Height) {
 			p.vy = -p.vy * conf.Bounce
 			p.y = float64(conf.Height) - conf.Size
-		}
-	}
-
-	// Particle repulsion with spatial partitioning
-	for i := range particles {
-		p := &particles[i]
-		gridIndex := int(p.x/conf.Size)*gridHeight + int(p.y/conf.Size)
-
-		for _, j := range grid[gridIndex] {
-			if i == j {
-				continue
-			}
-			p2 := &particles[j]
-			dx, dy := p.x-p2.x, p.y-p2.y
-			distanceSquared := dx*dx + dy*dy
-
-			if distanceSquared < 4*conf.Size*conf.Size && distanceSquared > 0 {
-				forceMagnitude := conf.Repulsion / distanceSquared
-				p.vx += forceMagnitude * dx
-				p.vy += forceMagnitude * dy
-				p2.vx -= forceMagnitude * dx
-				p2.vy -= forceMagnitude * dy
-			}
 		}
 	}
 
