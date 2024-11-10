@@ -41,9 +41,22 @@ var particles []Particle
 var gridWidth, gridHeight int
 var grid [][]int // each cell contains indices of particles
 
+// Dynamically change particle color based on speed
+var lowSpeedColor = color.RGBA{0, 57, 255, 255}
+var highSpeedColor = color.RGBA{255, 0, 0, 255}
+
+func interpColors(c1, c2 color.RGBA, t float64) color.RGBA {
+	return color.RGBA{
+		uint8(float64(c1.R)*(1-t) + float64(c2.R)*t),
+		uint8(float64(c1.G)*(1-t) + float64(c2.G)*t),
+		uint8(float64(c1.B)*(1-t) + float64(c2.B)*t),
+		255,
+	}
+}
+
 // Initialize particles and grid
 func initParticles() {
-	gridWidth, gridHeight = int(float64(conf.Width)/conf.Size), int(float64(conf.Height)/conf.Size)
+	gridWidth, gridHeight = int(float64(conf.Width)/conf.Size)+1, int(float64(conf.Height)/conf.Size)+1
 	grid = make([][]int, gridWidth*gridHeight)
 
 	for i := 0; i < conf.Particles; i++ {
@@ -107,6 +120,7 @@ func getNeighbors(gridCell int) []int {
 
 // Update runs the game logic
 func (g *Game) Update() error {
+	maxSpeed := 0.0
 	// Reset the spatial partitioning grid
 	for i := range grid {
 		grid[i] = nil
@@ -115,6 +129,17 @@ func (g *Game) Update() error {
 	// Update particle grid positions
 	for i := range particles {
 		p := &particles[i]
+		speed := math.Hypot(p.vx, p.vy)
+		if speed > maxSpeed {
+			maxSpeed = speed
+		}
+	}
+	for i := range particles {
+		p := &particles[i]
+		speed := math.Hypot(p.vx, p.vy)
+		normalizedSpeed := math.Abs(speed / maxSpeed)
+		particles[i].color = interpColors(lowSpeedColor, highSpeedColor, normalizedSpeed)
+
 		gridIndex := int(p.x/conf.Size)*gridHeight + int(p.y/conf.Size)
 		grid[gridIndex] = append(grid[gridIndex], i)
 	}
