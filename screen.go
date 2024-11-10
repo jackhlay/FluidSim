@@ -27,7 +27,8 @@ type Config struct {
 	Viscosity    float64
 	Turbulence   float64
 	Repulsion    float64
-	Speed        float64
+	Bounce       float64
+	Gravity      float64
 	Size         float64
 }
 
@@ -35,7 +36,6 @@ type Config struct {
 type Particle struct {
 	x, y   float64 // position
 	vx, vy float64 // velocity
-	color  color.RGBA
 }
 
 var particles []Particle
@@ -54,6 +54,7 @@ func (g *Game) Update() error {
 	if ebiten.IsMouseButtonPressed(ebiten.MouseButtonLeft) {
 		// Apply force to each particle toward the mouse position
 		for i := range particles {
+			particles[i].vy -= conf.Gravity
 			// Calculate the direction vector from the particle to the mouse position
 			dx := float64(mouseX) - particles[i].x
 			dy := float64(mouseY) - particles[i].y
@@ -73,6 +74,7 @@ func (g *Game) Update() error {
 	}
 	// Apply viscosity (friction)
 	for i := range particles {
+		particles[i].vy += conf.Gravity
 
 		particles[i].vx *= conf.Viscosity
 		particles[i].vy *= conf.Viscosity
@@ -84,15 +86,21 @@ func (g *Game) Update() error {
 		particles[i].y += particles[i].vy
 
 		// Edge detection
-		if particles[i].x-conf.Size <= 0 || particles[i].x+conf.Size > float64(conf.Width)-conf.Size {
+		if particles[i].x-conf.Size <= 0 {
 			particles[i].vx = -particles[i].vx
-			// particles[i].x = float64(conf.Width / 2)
-			// particles[i].y = float64(conf.Height / 2)
+			particles[i].x = conf.Size // Move just inside the left boundary
 		}
-		if particles[i].y-conf.Size <= 0 || particles[i].y+conf.Size > float64(conf.Height)-conf.Size {
+		if particles[i].x+conf.Size >= float64(conf.Width) {
+			particles[i].vx = -particles[i].vx
+			particles[i].x = float64(conf.Width) - conf.Size // Move just inside the right boundary
+		}
+		if particles[i].y-conf.Size <= 0 {
 			particles[i].vy = -particles[i].vy
-			// particles[i].x = float64(conf.Width / 2)
-			// particles[i].y = float64(conf.Height / 2)
+			particles[i].y = conf.Size // Move just inside the top boundary
+		}
+		if particles[i].y+conf.Size >= float64(conf.Height) {
+			particles[i].vy = -particles[i].vy * conf.Bounce
+			particles[i].y = float64(conf.Height) - conf.Size // Move just inside the bottom boundary
 		}
 
 		// Repulsion between particles
@@ -117,6 +125,7 @@ func (g *Game) Update() error {
 				}
 			}
 		}
+
 	}
 
 	return nil
@@ -130,12 +139,12 @@ func (g *Game) Draw(screen *ebiten.Image) {
 			r := uint8(rand.Intn(256))
 			g := uint8(rand.Intn(256))
 			b := uint8(rand.Intn(256))
-			vector.DrawFilledCircle(screen, float32(p.x), float32(p.y), float32(conf.Size), color.RGBA{r, g, b, 255}, true)
+			vector.DrawFilledCircle(screen, float32(p.x), float32(p.y), float32(conf.Size), color.RGBA{r, g, b, 255}, false)
 		} else {
-			r := uint8(255)
-			g := uint8(255)
+			r := uint8(0)
+			g := uint8(242)
 			b := uint8(255)
-			vector.DrawFilledCircle(screen, float32(p.x), float32(p.y), float32(conf.Size), color.RGBA{r, g, b, 127}, true)
+			vector.DrawFilledCircle(screen, float32(p.x), float32(p.y), float32(conf.Size), color.RGBA{r, g, b, 120}, false)
 		}
 	}
 }

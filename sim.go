@@ -9,13 +9,15 @@ import (
 
 var conf = Config{
 	DynamicColor: false,
-	Width:        1280,
-	Height:       720,
-	Particles:    128,
-	Viscosity:    .99,
+	Width:        720,
+	Height:       480,
+	Particles:    4096,
+	Viscosity:    .98,
 	Turbulence:   .01,
-	Repulsion:    .99,
-	Size:         7,
+	Repulsion:    .31,
+	Bounce:       .68746,
+	Gravity:      6.31,
+	Size:         1.25,
 }
 
 func main() {

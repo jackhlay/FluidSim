@@ -1,6 +1,6 @@
 # Fluid Simulation  
   
-#### A quick simulation made in go. not too sopishtocated.  
+#### A quick fluid simulation made in go. not quite water.  
   
 In the "sim.go" file, there's a Config object with 8 params that will alter the simulation.  
  
