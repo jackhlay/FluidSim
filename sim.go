@@ -10,7 +10,7 @@ import (
 var conf = Config{
 	Width:      1280,
 	Height:     720,
-	Particles:  1024,
+	Particles:  97,
 	Viscosity:  .99,
 	Turbulence: .03,
 	Repulsion:  .5,
@@ -19,15 +19,17 @@ var conf = Config{
 }
 
 func main() {
-	//Prepare particles
+	// Prepare particles
+	particles = make([]Particle, conf.Particles)
 	for i := 0; i < conf.Particles; i++ {
-		particles = append(particles, Particle{
+		particles[i] = Particle{
 			x:  float64(conf.Width / 2),
 			y:  float64(conf.Height / 2),
 			vx: (2*rand.Float64() - 1),
-			vy: 0,
-		})
+			vy: -9.81,
+		}
 	}
+
 	// Initialize the game
 	game := &Game{}
 
