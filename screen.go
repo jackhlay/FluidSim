@@ -35,6 +35,7 @@ type Config struct {
 type Particle struct {
 	x, y   float64 // position
 	vx, vy float64 // velocity
+	color  color.RGBA
 }
 
 var particles []Particle
@@ -134,7 +135,7 @@ func (g *Game) Draw(screen *ebiten.Image) {
 			r := uint8(255)
 			g := uint8(255)
 			b := uint8(255)
-			vector.DrawFilledCircle(screen, float32(p.x), float32(p.y), float32(conf.Size), color.RGBA{r, g, b, 237}, true)
+			vector.DrawFilledCircle(screen, float32(p.x), float32(p.y), float32(conf.Size), color.RGBA{r, g, b, 127}, true)
 		}
 	}
 }

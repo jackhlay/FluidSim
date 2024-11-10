@@ -11,11 +11,11 @@ var conf = Config{
 	DynamicColor: false,
 	Width:        1280,
 	Height:       720,
-	Particles:    512,
+	Particles:    128,
 	Viscosity:    .99,
 	Turbulence:   .01,
-	Repulsion:    1.0398,
-	Size:         4,
+	Repulsion:    .99,
+	Size:         7,
 }
 
 func main() {
