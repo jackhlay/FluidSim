@@ -6,9 +6,7 @@ In the "sim.go" file, there's a Config object with 12 params that will alter the
  
 ## Config Params 
 - DynamicColor(bool):  
-    - Toggles dynamic color generation for each particle
-    - ![Dtnamic Mode Example](/Video/Dynamic.mp4)
-    - ![Standard Mode Example](/Video/Non-Dynamic.mp4)
+    - Toggles dynamic color generation for each particle, based on velocity
 - Width (int):  
     - Changes the width of the window
 - Height (int):  
