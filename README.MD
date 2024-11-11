@@ -2,7 +2,7 @@
   
 #### A quick fluid simulation made in go. not quite water.  
   
-In the "sim.go" file, there's a Config object with 12 params that will alter the simulation.  
+In the "sim.go" file, there's a Config object with 15 params that will alter the simulation.  
  
 ## Config Params 
 - DynamicColor(bool):  
@@ -10,7 +10,7 @@ In the "sim.go" file, there's a Config object with 12 params that will alter the
 - Width (int):  
     - Changes the width of the window
 - Height (int):  
-    - Changes the Height of the window
+    - Changes the Height of the window  
 - Particles (int):  
     - Changes the Number of generated particles
 - Viscosity (float64):  
@@ -18,6 +18,12 @@ In the "sim.go" file, there's a Config object with 12 params that will alter the
     - Controls how quickly particle velocities decay over time. Higher values cause particles to "settle" slower.
 - Turbulence (float64):  
     - Introduces random noise, to mimic movement in fluid systems.  
+- lowVelocityThreshold (float64):
+    - This is the minimum speed threshold below which friction starts applying. It's particularly useful for making particles settle naturally at lower speeds.
+- Friction (float64):
+    - The friction coefficient could apply only when the particle’s speed is below ```lowVelocityThreshold``` , helping particles come to a complete stop rather than jittering indefinitely.
+- Drag (float64):
+    - Applied proportionally to speed (as a product of velocity, not a constant value), drag scales based on how fast each particle is moving.
 - Repulsion(float64):  
     - Defines the repulsive force strength between particles to keep them apart.
     - Higher values increase the distance particles attempt to maintain from each other
@@ -40,6 +46,9 @@ In the "sim.go" file, there's a Config object with 12 params that will alter the
     - ```SpringConstant``` and ```RestLength``` work together to determine the overall "structural integrity" of the fluid. Higher values for these parameters create a more solid, jelly-like substance, while lower values make the fluid looser.  
 - Damping and Stability:
     - ```Viscosity``` and ```Repulsion``` influence the stability and smoothness of the particle motion. Increasing ```Viscosity``` makes particles settle faster and reduces erratic movement.  
+    - ```Viscosity``` acts as a passive decay of velocity  
+    - ```Drag``` reduces speed proportionally to velocity  
+    - ```Friction``` only applies below the ```lowVelocityThreshold```, to stabilize slow moving particles, bringing them to a stop while avoiding jitter.
   
 ## Controls
 - Left Click  
