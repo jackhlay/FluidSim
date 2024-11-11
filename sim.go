@@ -7,7 +7,7 @@ import (
 )
 
 var conf = Config{
-	DynamicColor: false,
+	DynamicColor: true,
 	Width:        720,
 	Height:       680,
 
